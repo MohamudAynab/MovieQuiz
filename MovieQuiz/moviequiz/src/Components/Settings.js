@@ -15,7 +15,7 @@ function Settings() {
             });
         }, [setOptions]);
 
-    const handleCategoryChange = event => {
+        const handleCategoryChange = event => {
     setQuestionCategory(event.target.value)
     }
 

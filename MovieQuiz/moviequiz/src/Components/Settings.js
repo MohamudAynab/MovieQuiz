@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react'
-import { useSelector, useDispatch } from 'react-redux'
-import FetchButton from './FetchButton'
+import React, { useEffect, useState } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import FetchButton from './FetchButton';
 
 function Settings() {
   const [options, setOptions] = useState(null)

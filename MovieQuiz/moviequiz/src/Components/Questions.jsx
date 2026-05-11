@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 
 const decodeHTML = function (html) {
-  const txt = document.createElement('textarea')
-  txt.innerHTML = html
-  return txt.value
+  const parsed = new DOMParser().parseFromString(String(html), 'text/html')
+
+  return parsed.documentElement.textContent || ''
 }
 
 function Question() {

@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import FetchButton from './FetchButton';
 
+const CATEGORIES_URL = 'https://opentdb.com/api_category.php'
+const MAX_QUESTION_AMOUNT = 50
+
 function Settings() {
   const [options, setOptions] = useState(null)
 
@@ -21,7 +24,7 @@ function Settings() {
   const dispatch = useDispatch()
 
   useEffect(() => {
-    const apiUrl = `https://opentdb.com/api_category.php`
+    let active = true
 
     const handleLoadingChange = (value) => {
       dispatch({
@@ -32,12 +35,38 @@ function Settings() {
 
     handleLoadingChange(true)
 
-    fetch(apiUrl)
-      .then((res) => res.json())
-      .then((response) => {
-        handleLoadingChange(false)
-        setOptions(response.trivia_categories)
+    fetch(CATEGORIES_URL, { credentials: 'omit' })
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`Trivia categories API returned ${res.status}`)
+        }
+
+        return res.json()
       })
+      .then((response) => {
+        if (!active) {
+          return
+        }
+
+        handleLoadingChange(false)
+        setOptions(
+          Array.isArray(response.trivia_categories)
+            ? response.trivia_categories
+            : []
+        )
+      })
+      .catch(() => {
+        if (!active) {
+          return
+        }
+
+        handleLoadingChange(false)
+        setOptions([])
+      })
+
+    return () => {
+      active = false
+    }
   }, [setOptions, dispatch])
 
   const handleCategoryChange = (event) => {
@@ -62,9 +91,15 @@ function Settings() {
   }
 
   const handleAmountChange = (event) => {
+    const { value } = event.target
+    const amount = Number.parseInt(value, 10)
+
     dispatch({
       type: 'CHANGE_AMOUNT',
-      amount_of_questions: event.target.value,
+      amount_of_questions:
+        value === '' || !Number.isInteger(amount)
+          ? ''
+          : Math.min(Math.max(amount, 1), MAX_QUESTION_AMOUNT),
     })
   }
 
@@ -75,9 +110,8 @@ function Settings() {
         <div>
           <h2>Select Category:</h2>
           <select value={questionCategory} onChange={handleCategoryChange}>
-            <option>All</option>
+            <option value="">All</option>
             {options &&
-              options.length &&
               options.map((option) => (
                 <option value={option.id} key={option.id}>
                   {option.name}
@@ -121,7 +155,13 @@ function Settings() {
 
         <div>
           <h2>Amount of Questions:</h2>
-          <input value={questionAmount} onChange={handleAmountChange} />
+          <input
+            type="number"
+            min="1"
+            max={MAX_QUESTION_AMOUNT}
+            value={questionAmount}
+            onChange={handleAmountChange}
+          />
         </div>
 
         <FetchButton text="Get started!" />

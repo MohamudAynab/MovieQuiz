@@ -1,6 +1,28 @@
 import React from 'react'
 import { useSelector, useDispatch } from 'react-redux'
 
+const API_URL = 'https://opentdb.com/api.php'
+const DEFAULT_QUESTION_AMOUNT = 10
+const MAX_QUESTION_AMOUNT = 50
+const VALID_DIFFICULTIES = new Set(['easy', 'medium', 'hard'])
+const VALID_TYPES = new Set(['multiple', 'boolean'])
+
+const getSafeQuestionAmount = (value) => {
+  const amount = Number.parseInt(value, 10)
+
+  if (!Number.isInteger(amount)) {
+    return DEFAULT_QUESTION_AMOUNT
+  }
+
+  return Math.min(Math.max(amount, 1), MAX_QUESTION_AMOUNT)
+}
+
+const getSafeCategory = (value) => {
+  const category = Number.parseInt(value, 10)
+
+  return Number.isInteger(category) && category > 0 ? String(category) : null
+}
+
 function FetchButton(props) {
   const questionCategory = useSelector(
     (state) => state.options.question_category
@@ -31,28 +53,41 @@ function FetchButton(props) {
   }
 
   const handleQuery = async () => {
-    let apiUrl = `https://opentdb.com/api.php?amount=${questionAmount}`
+    const params = new URLSearchParams({
+      amount: String(getSafeQuestionAmount(questionAmount)),
+    })
+    const safeCategory = getSafeCategory(questionCategory)
 
-    if (questionCategory.length) {
-      apiUrl = apiUrl.concat(`&category=${questionCategory}`)
+    if (safeCategory) {
+      params.set('category', safeCategory)
     }
 
-    if (questionDifficulty.length) {
-      apiUrl = apiUrl.concat(`&difficulty=${questionDifficulty}`)
+    if (VALID_DIFFICULTIES.has(questionDifficulty)) {
+      params.set('difficulty', questionDifficulty)
     }
 
-    if (questionType.length) {
-      apiUrl = apiUrl.concat(`&type=${questionType}`)
+    if (VALID_TYPES.has(questionType)) {
+      params.set('type', questionType)
     }
 
     setLoading(true)
 
-    await fetch(apiUrl)
-      .then((res) => res.json())
-      .then((response) => {
-        setQuestions(response.results)
-        setLoading(false)
+    try {
+      const response = await fetch(`${API_URL}?${params.toString()}`, {
+        credentials: 'omit',
       })
+
+      if (!response.ok) {
+        throw new Error(`Trivia API returned ${response.status}`)
+      }
+
+      const data = await response.json()
+      setQuestions(Array.isArray(data.results) ? data.results : [])
+    } catch (error) {
+      setQuestions([])
+    } finally {
+      setLoading(false)
+    }
 
     if (questionIndex > 0) {
       dispatch({

@@ -1,20 +1,22 @@
+import React from 'react'
+import { useSelector } from 'react-redux'
+import FinalScreen from './Components/FinalScreen'
+import Question from './Components/Questions'
+import Settings from './Components/Settings'
 
-// src/App.js
-import React from 'react';
-import App from './App';
-import Reducer from './/Components/Reducer';
-import ReactDOM from 'react-dom';
-import { createStore } from 'redux';
-import { Provider } from 'react-redux';
+function App() {
+  const questions = useSelector((state) => state.questions)
+  const questionIndex = useSelector((state) => state.index)
 
-const store = createStore(Reducer);
-ReactDOM.render(
-  <React.StrictMode>
-    <App />
-    <Provider store={store}>
-      <App />
-    </Provider>
-  </React.StrictMode>,
-  document.getElementById('root')
-);
+  if (!questions.length) {
+    return <Settings />
+  }
+
+  if (questionIndex >= questions.length) {
+    return <FinalScreen />
+  }
+
+  return <Question />
+}
+
 export default App

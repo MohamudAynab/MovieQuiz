@@ -19,7 +19,7 @@ const renderApp = () => {
   );
 };
 
-test('renders quiz settings', () => {
+test('renders quiz settings', async () => {
   vi.spyOn(globalThis, 'fetch').mockResolvedValue({
     ok: true,
     json: async () => ({ trivia_categories: [] }),
@@ -27,5 +27,7 @@ test('renders quiz settings', () => {
 
   renderApp();
 
-  expect(screen.getByRole('heading', { name: /quiz app/i })).toBeInTheDocument();
+  expect(
+    await screen.findByRole('heading', { name: /quiz app/i })
+  ).toBeInTheDocument();
 });
